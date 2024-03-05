@@ -1,0 +1,3 @@
+FROM tomcat:8-alpine
+RUN apt install sshpass clean -y
+VOLUME /usr/local/tomcat/webapps
