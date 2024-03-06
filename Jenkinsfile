@@ -1,8 +1,10 @@
 pipeline {
   agent {
     environment {
-      NEXUS_URL = "51.250.74.132:8123"
+      NEXUS_URL = "158.160.106.226:8123"
+      PRODE = "178.154.200.198"
       USERNAME = "admin"
+      PASSWORD = "admin"
     }
 
     docker {
@@ -14,7 +16,7 @@ pipeline {
           maven 'm3'
   }
 
-}
+  }
 
   stages {
 
@@ -45,27 +47,20 @@ pipeline {
 
     stage("Login, push to Nexus ") {
         steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-registry', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                  sh 'docker login ${NEXUS_URL} -u $USERNAME -p $PASSWORD'
-
-                withDockerRegistry(credentialsId: '62d1263a-54b8-467a-8e76-002cc88115e9', url: 'https://index.docker.io/v1/') {
-                  sh 'docker push grandhustla/homework11-project:1.0.0'
-
-                withCredentials([usernamePassword(credentialsId: '26f2ddee-0e23-4038-8234-1f59b4582679', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-                    sh 'docker login 158.160.38.190:8081 -u $NEXUS_USERNAME -p $NEXUS_PASSWORD'
+                withCredentials([usernamePassword(credentialsId: '2bf3b32f-9aef-4dad-ae85-7aaecbb9c4c9', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                sh 'docker login ${NEXUS_URL} -u $USERNAME -p $PASSWORD'
 
                 sh 'docker tag mywebapp:v5.0 ${NEXUS_URL}/mywebapp:v5.0'
                 sh 'docker push ${NEXUS_URL}/mywebapp:v5.0'
                 sh 'docker run -d -p 8080:8080 mywebapp:v5.0'
+              }
         }
     }
 
-
     stage('Deploy to Production') {
       steps {
-            deploy adapters: [tomcat9(credentialsId: 'f7a2c7a4-9c67-49c4-8d5e-2c775e33c9c9', path:  '', url: 'http://65.0.125.40:8080/')], contextPath: 'myweb', war: 'target/*.war'
-            }
+            deploy adapters: [tomcat9(credentialsId: '43bd4659-ebc3-40f1-ba49-1d219980b31d', path: '', url: 'http://178.154.200.198:8080')], contextPath: 'mywebapp:v5.0', war: 'target/*.war'
       }
     }
-  }
+ }
 }
