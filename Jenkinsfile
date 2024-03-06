@@ -1,21 +1,19 @@
 pipeline {
   agent {
-    environment {
-      NEXUS_URL = "158.160.106.226:8123"
-      PRODE = "178.154.200.198"
-      USERNAME = "admin"
-      PASSWORD = "admin"
-    }
-
     docker {
-      image '${NEXUS_URL}/boxfuse:1.0'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
+      image '158.160.106.226:8123/boxfuse:v1.0'
     }
+  }
+
+  environment {
+    NEXUS_URL = "158.160.106.226:8123"
+    PRODE = "178.154.200.198"
+    USERNAME = "admin"
+    PASSWORD = "admin"
+  }
 
   tools {
           maven 'm3'
-  }
-
   }
 
   stages {
