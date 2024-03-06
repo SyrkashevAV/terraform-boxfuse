@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image '158.160.106.226:8123/boxfuse:v1.0'
+      image 'syrkashevav/boxfuse:v1.0'
     }
   }
 
