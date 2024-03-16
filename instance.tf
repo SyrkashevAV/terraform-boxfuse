@@ -65,18 +65,14 @@ resource "yandex_compute_instance" "build" {
     ssh-keys = "extor:${file("~/.ssh/id_rsa.pub")}"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-     "sudo apt update && apt upgrade && apt install git, default-jdk, maven -y",
-     "sudo echo 1111 && sudo pwd && ls -la && sudo java --version && sudo mvn --version",
-     "sudo echo 2222 && sudo ls -la /var/lib/dpkg",
-     "sudo echo 3333 && sudo ls -la /var/lib/dpkg/lock-frontend",
-     "sudo apt list --upgradable",
-     "git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git",
-     "sudo echo 4444 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/",
-     "sudo mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package"
-    ]
-  }
+  user_data = <<-EOF
+                #!/bin/bash
+                sudo apt update && apt upgrade && apt install git, default-jdk, maven -y
+                sudo echo 1111 && sudo pwd && ls -la && sudo java --version && sudo mvn --version
+                git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
+                sudo echo 4444 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/
+                sudo mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package
+              EOF
 }
 
 resource "yandex_compute_instance" "prod" {
