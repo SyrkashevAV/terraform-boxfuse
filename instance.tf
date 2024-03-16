@@ -67,28 +67,14 @@ resource "yandex_compute_instance" "build" {
 
   provisioner "remote-exec" {
     inline = [
-     "sudo apt-get update && apt get upgrade && apt install git, default-jdk, awscli -y",
-     "sudo echo 111111 && sudo pwd && ls -la && java --version",
+     "sudo apt update && apt upgrade && apt install git, default-jdk, maven -y",
+     "sudo echo 1111 && sudo pwd && ls -la && sudo java --version && sudo mvn --version",
+     "sudo echo 2222 && sudo ls -la /var/lib/dpkg",
+     "sudo echo 3333 && sudo ls -la /var/lib/dpkg/lock-frontend",
+     "sudo apt list --upgradable",
      "git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git",
-     "sudo echo 222222 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/",
-     "sudo wget https://dlcdn.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz",
-     "sudo echo 8888 && ls -la ~/",
-     "sudo echo 9999 && ls -la /opt/",
-     "sudo tar xvf ~/apache-maven-3.9.6-bin.tar.gz -C /opt",
-     "sudo echo 9999999999 && ls -la /opt/",
-     "sudo echo 'export M2_HOME=/opt/apache-maven-3.9.6' >> ~/.profile",
-     "sudo echo 'export M2=$M2_HOME/bin' >> ~/.profile",
-     "sudo echo 'export MAVEN_OPTS="-Xms256m -Xmx512m"' >> ~/.profile",
-     "sudo echo 'export PATH=$M2:$PATH' >> ~/.profile",
-     "sudo source ~/.profile",
-     "sudo cat ~/.profile",
-     "sudo mvn --version",
-     "sudo echo 77777 && sudo ls -la ~/",
-     "sudo mvn --version",
-     "mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package",
-     "sudo echo 333333 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello",
-     "sudo echo 444444 && sudo pwd && sudo ls -la ~/",
-     "cp /tmp/boxfuse/target/hello-1.0.war s3://devupprod.test.com --acl public-read"
+     "sudo echo 4444 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/",
+     "sudo mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package"
     ]
   }
 }
@@ -128,13 +114,12 @@ resource "yandex_compute_instance" "prod" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt update && apt install default-jdk, tomcat9, awscli -y",
-      "sudo echo 55555 && sudo pwd && sudo ls -la /usr/lib",
-      "sudo echo 66666 && sudo pwd && sudo ls -la /usr/local",
-      "cd /var/lib/tomcat9/webapps/",
-      "sleep 180",
-      "sudo wget https://s3.eu-central-1.amazonaws.com/devupprod.test.com/hello-1.0.war",
-      "sudo service tomcat9 restart"
+      "sudo echo 5555 && sudo ls -la /var/lib/dpkg/lock-frontend",
+      "sudo apt update && apt install default-jdk, tomcat9 -y",
+      "sudo apt list --upgradable",
+      "sudo echo 6666 && sudo ls -la /var/lib/",
+      "sudo echo 7777 && sudo ls -la /var/lib/dpkg",
+      "sudo echo 8888 && sudo ls -la /var/lib/dpkg/lock-frontend"
     ]
   }
 }
