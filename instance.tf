@@ -67,7 +67,7 @@ resource "yandex_compute_instance" "build" {
 
   user_data = <<-EOF
                 #!/bin/bash
-                sudo apt update && apt upgrade && apt install git, default-jdk, maven -y
+                sudo apt update && apt upgrade && apt install git default-jdk maven -y
                 sudo echo 1111 && sudo pwd && ls -la && sudo java --version && sudo mvn --version
                 git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
                 sudo echo 4444 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/
@@ -111,7 +111,7 @@ resource "yandex_compute_instance" "prod" {
   provisioner "remote-exec" {
     inline = [
       "sudo echo 5555 && sudo ls -la /var/lib/dpkg/lock-frontend",
-      "sudo apt update && apt install default-jdk, tomcat9 -y",
+      "sudo apt update && apt install default-jdk tomcat9 -y",
       "sudo apt list --upgradable",
       "sudo echo 6666 && sudo ls -la /var/lib/",
       "sudo echo 7777 && sudo ls -la /var/lib/dpkg",
