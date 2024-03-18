@@ -13,9 +13,9 @@ variable "zone" {
   default = "ru-central1-a"
 }
 
-variable "image" {
-  description = "Specifying type of boot image"
-  default = "ubuntu-2204-lts"
+variable "image_id" {
+  description = "Specifying id of boot image"
+  default = "fd85u0rct32prepgjlv0"
 }
 
 variable "disk_size" {
@@ -47,37 +47,3 @@ variable "num_nodes" {
   description = "Number of nodes to create"
   default = 1
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

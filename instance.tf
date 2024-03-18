@@ -33,6 +33,28 @@ resource "yandex_vpc_subnet" "subnet" {
   }
 }
 
+resource "yandex_iam_service_account" "sa" {
+  folder_id = var.folder_id
+  name      = "tf-test-sa"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "sa-editor" {
+  folder_id = var.folder_id
+  role      = "storage.editor"
+  member    = "serviceAccount:${yandex_iam_service_account.sa.id}"
+}
+
+resource "yandex_iam_service_account_static_access_key" "sa-static-key" {
+  service_account_id = yandex_iam_service_account.sa.id
+  description        = "static access key for object storage"
+}
+
+resource "yandex_storage_bucket" "test" {
+  access_key = yandex_iam_service_account_static_access_key.sa-static-key.access_key
+  secret_key = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
+  bucket = "tf-test-bucket-boxfuse"
+}
+
 resource "yandex_compute_instance" "build" {
   count = "${var.num_nodes}"
   name = "${var.maven_instance_name}${count.index + 1}"
@@ -48,7 +70,7 @@ resource "yandex_compute_instance" "build" {
   boot_disk {
     initialize_params {
       size  = "${var.disk_size}"
-      image_id="fd85u0rct32prepgjlv0"
+      image_id="${var.image_id}"
       type = "network-ssd"
     }
   }
@@ -65,14 +87,17 @@ resource "yandex_compute_instance" "build" {
     ssh-keys = "extor:${file("~/.ssh/id_rsa.pub")}"
   }
 
-  user_data = <<-EOF
-                #!/bin/bash
-                sudo apt update && apt upgrade && apt install git default-jdk maven -y
-                sudo echo 1111 && sudo pwd && ls -la && sudo java --version && sudo mvn --version
-                git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git
-                sudo echo 4444 && sudo pwd && sudo ls -la ~/boxfuse-sample-java-war-hello/
-                sudo mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package
-              EOF
+  provisioner "remote-exec" {
+    inline = [
+     "sudo apt update",
+     "sudo apt install git default-jdk maven awscli -y",
+     "git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git",
+     "mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package",
+     "aws --profile default configure set aws_access_key_id ${yandex_iam_service_account_static_access_key.sa-static-key.access_key}",
+     "aws --profile default configure set aws_secret_access_key ${yandex_iam_service_account_static_access_key.sa-static-key.secret_key}",
+     "aws --endpoint-url=https://storage.yandexcloud.net/ s3 cp ~/boxfuse-sample-java-war-hello/target/hello-1.0.war s3://tf-test-bucket-boxfuse/"
+    ]
+  }
 }
 
 resource "yandex_compute_instance" "prod" {
@@ -103,19 +128,19 @@ resource "yandex_compute_instance" "prod" {
     private_key = file("~/.ssh/id_rsa")
   }
 
-
   metadata = {
     ssh-keys = "extor:${file("~/.ssh/id_rsa.pub")}"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo echo 5555 && sudo ls -la /var/lib/dpkg/lock-frontend",
-      "sudo apt update && apt install default-jdk tomcat9 -y",
-      "sudo apt list --upgradable",
-      "sudo echo 6666 && sudo ls -la /var/lib/",
-      "sudo echo 7777 && sudo ls -la /var/lib/dpkg",
-      "sudo echo 8888 && sudo ls -la /var/lib/dpkg/lock-frontend"
+      "sudo apt update",
+      "sudo apt install default-jdk tomcat9 wget awscli -y",
+      "sleep 180",
+      "aws --profile default configure set aws_access_key_id ${yandex_iam_service_account_static_access_key.sa-static-key.access_key}",
+      "aws --profile default configure set aws_secret_access_key ${yandex_iam_service_account_static_access_key.sa-static-key.secret_key}",
+      "aws s3 cp --endpoint-url=https://storage.yandexcloud.net s3://tf-test-bucket-boxfuse/hello-1.0.war /var/lib/tomcat9/webapps",
+      "sudo service tomcat9 restart"
     ]
   }
 }
