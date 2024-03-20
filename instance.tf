@@ -9,7 +9,7 @@ terraform {
 
 provider "yandex" {
   token     = "${var.token}"
-  folder_id = var.folder_id
+  folder_id = "${var.folder_id}"
   zone      = "${var.zone}"
   profile   = "testing"
 }
@@ -34,12 +34,12 @@ resource "yandex_vpc_subnet" "subnet" {
 }
 
 resource "yandex_iam_service_account" "sa" {
-  folder_id = var.folder_id
+  folder_id = "${var.folder_id}"
   name      = "tf-test-sa"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "sa-editor" {
-  folder_id = var.folder_id
+  folder_id = "${var.folder_id}"
   role      = "storage.editor"
   member    = "serviceAccount:${yandex_iam_service_account.sa.id}"
 }
@@ -64,8 +64,9 @@ resource "yandex_compute_instance" "build" {
     nat = true
   }
   resources {
-    cores = 2
-    memory = 2
+    cores = "${var.cores}"
+    memory = "${var.memory}"
+
   }
   boot_disk {
     initialize_params {
@@ -80,11 +81,11 @@ resource "yandex_compute_instance" "build" {
     type = "ssh"
     user = "ubuntu"
     agent = false
-    private_key = file("~/.ssh/id_rsa")
+    private_key = "${file(var.private_key_path)}"
   }
 
   metadata = {
-    ssh-keys = "extor:${file("~/.ssh/id_rsa.pub")}"
+    ssh-keys = "extor:${file(var.public_key_path)}"
   }
 
   provisioner "remote-exec" {
@@ -94,7 +95,7 @@ resource "yandex_compute_instance" "build" {
      "git clone https://github.com/boxfuse/boxfuse-sample-java-war-hello.git",
      "mvn -f ~/boxfuse-sample-java-war-hello/pom.xml package",
      "aws --profile default configure set aws_access_key_id ${yandex_iam_service_account_static_access_key.sa-static-key.access_key}",
-     "aws --profile default configure set aws_secret_access_key ${yandex_iam_service_account_static_access_key.sa-static-key.secret_key}",
+     "aws --profile default configure set aws_secret_access_key ${nonsensitive(yandex_iam_service_account_static_access_key.sa-static-key.secret_key)}",
      "aws --endpoint-url=https://storage.yandexcloud.net/ s3 cp ~/boxfuse-sample-java-war-hello/target/hello-1.0.war s3://tf-test-bucket-boxfuse/"
     ]
   }
@@ -109,13 +110,13 @@ resource "yandex_compute_instance" "prod" {
     nat = true
   }
   resources {
-    cores = 2
-    memory = 2
+    cores = "${var.cores}"
+    memory = "${var.memory}"
   }
   boot_disk {
     initialize_params {
       size  = "${var.disk_size}"
-      image_id="fd85u0rct32prepgjlv0"
+      image_id="${var.image_id}"
       type = "network-ssd"
     }
   }
@@ -125,21 +126,24 @@ resource "yandex_compute_instance" "prod" {
     type = "ssh"
     user = "ubuntu"
     agent = false
-    private_key = file("~/.ssh/id_rsa")
+    private_key = "${file(var.private_key_path)}"
   }
 
+
   metadata = {
-    ssh-keys = "extor:${file("~/.ssh/id_rsa.pub")}"
+    ssh-keys = "extor:${file(var.public_key_path)}"
   }
 
   provisioner "remote-exec" {
     inline = [
       "sudo apt update",
-      "sudo apt install default-jdk tomcat9 wget awscli -y",
+      "sudo apt install default-jdk tomcat9 awscli -y",
       "sleep 180",
       "aws --profile default configure set aws_access_key_id ${yandex_iam_service_account_static_access_key.sa-static-key.access_key}",
-      "aws --profile default configure set aws_secret_access_key ${yandex_iam_service_account_static_access_key.sa-static-key.secret_key}",
-      "aws s3 cp --endpoint-url=https://storage.yandexcloud.net s3://tf-test-bucket-boxfuse/hello-1.0.war /var/lib/tomcat9/webapps",
+      "aws --profile default configure set aws_secret_access_key ${nonsensitive(yandex_iam_service_account_static_access_key.sa-static-key.secret_key)}",
+      "aws s3 cp --endpoint-url=https://storage.yandexcloud.net s3://tf-test-bucket-boxfuse/hello-1.0.war hello-1.0.war",
+      "sudo mv ./hello-1.0.war /var/lib/tomcat9/webapps/hello-1.0.war",
+      "aws s3api delete-object --endpoint-url https://storage.yandexcloud.net --bucket tf-test-bucket-boxfuse --key hello-1.0.war",
       "sudo service tomcat9 restart"
     ]
   }

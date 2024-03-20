@@ -23,6 +23,16 @@ variable "disk_size" {
   default = 10
 }
 
+variable "cores" {
+  description = "Specifying cores"
+  default = 2
+}
+
+variable "memory" {
+  description = "Specifying memory"
+  default = 2
+}
+
 variable "private_key_path" {
   description = "Path to ssh private key, which would be used to access workers"
   default     = "~/.ssh/id_rsa"
